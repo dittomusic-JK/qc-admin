@@ -40,6 +40,10 @@ import PromoPurchasesView from '../views/PromoPurchasesView.vue'
 import DiscountsView from '../views/DiscountsView.vue'
 import YoutubeSalesView from '../views/YoutubeSalesView.vue'
 import StoreRoyaltiesView from '../views/StoreRoyaltiesView.vue'
+import CreditAddView from '../views/CreditAddView.vue'
+import SyncOpportunitiesView from '../views/sync/SyncOpportunitiesView.vue'
+import SyncApplicantsView from '../views/sync/SyncApplicantsView.vue'
+import SyncOpportunityCreateView from '../views/sync/SyncOpportunityCreateView.vue'
 
 const routes: RouteRecordRaw[] = [
   { path: '/', component: DashboardView, meta: { title: 'Dashboard' } },
@@ -48,6 +52,7 @@ const routes: RouteRecordRaw[] = [
   { path: '/users', component: UsersView, meta: { title: 'Users' } },
   { path: '/users/:id', component: UserDetailView, meta: { title: 'User', detail: 'Maya Linden' } },
   { path: '/credits', component: CreditsView, meta: { title: 'Credits' } },
+  { path: '/credits/add', component: CreditAddView, meta: { title: 'Add Credit' } },
   { path: '/labels', component: LabelsView, meta: { title: 'Labels' } },
   { path: '/kyc-status', component: KycStatusView, meta: { title: 'KYC Status' } },
   { path: '/ban-log', component: BanLogView, meta: { title: 'Ban Log' } },
@@ -81,6 +86,11 @@ const routes: RouteRecordRaw[] = [
   { path: '/publishing/works', component: PublishingWorksView, meta: { title: 'All Works' } },
   { path: '/publishing/name-update', component: PublishingNameUpdateView, meta: { title: 'Name Update' } },
   { path: '/publishing/ipi-cae-update', component: PublishingIpiUpdateView, meta: { title: 'IPI/CAE Numbers Update' } },
+
+  // Sync Opportunities (from Dashboard2)
+  { path: '/sync-opportunities', component: SyncOpportunitiesView, meta: { title: 'Sync Opportunities' } },
+  { path: '/sync-opportunities/create', component: SyncOpportunityCreateView, meta: { title: 'Create Sync Opportunity' } },
+  { path: '/sync-opportunities/:id/applicants', component: SyncApplicantsView, meta: { title: 'Sync Applicants' } },
 
   // Music Releases
   { path: '/releases', component: ReleasesView, meta: { title: 'Music Releases' } },

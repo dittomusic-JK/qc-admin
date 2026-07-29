@@ -72,6 +72,7 @@ export const nav: NavEntry[] = [
       { label: 'All Works', path: '/publishing/works' },
       { label: 'Name Update', path: '/publishing/name-update' },
       { label: 'IPI/CAE Numbers Update', path: '/publishing/ipi-cae-update' },
+      { label: 'Sync Opportunities', path: '/sync-opportunities' },
     ],
   },
   {

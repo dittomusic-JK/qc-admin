@@ -1,6 +1,8 @@
 <template>
   <div>
-    <PageHeader title="Credits" description="Account credits issued by staff — track redemption and remaining balances." />
+    <PageHeader title="Credits" description="Account credits issued by staff — track redemption and remaining balances.">
+      <Btn variant="primary" icon="plus" @click="$router.push('/credits/add')">Add Credit</Btn>
+    </PageHeader>
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-4 items-start">
       <DataTable :columns="columns" :rows="credits" row-key="id">
