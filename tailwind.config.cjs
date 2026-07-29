@@ -23,6 +23,14 @@ module.exports = {
         "accent": "#5f1fff",
         "accent-soft": "#f3edff",
 
+        // Subscription tier colors (Ditto framework tokens)
+        "tier-starter": "#955fff",
+        "tier-starter-ink": "#7527f0",
+        "tier-pro": "#00ff99",
+        "tier-pro-ink": "#009c5e",
+        "tier-label": "#f6c443",
+        "tier-label-ink": "#9c7c0e",
+
         // Status system (bg = color/10, text = -ink variant)
         "success": "#00d346",
         "success-ink": "#00893f",

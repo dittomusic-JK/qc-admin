@@ -13,7 +13,8 @@ npm run dev   # http://localhost:5174
 
 - **Type**: Satoshi everywhere; 22px bold page titles, 13–14px body, `tabular-nums` tables
 - **Color**: one accent (Ditto purple `#5f1fff`), ink `#101f3c`, surface `#f7f7fc`, hairline borders
-- **Status system** (`StatusBadge`): success = positive/cleared/active · warning = pending/awaiting · danger = blocked/rejected/banned · info = informational · neutral = inactive · accent = plan/brand
+- **Status system** (`StatusBadge`): success = positive/cleared/active · warning = pending/awaiting · danger = blocked/rejected/banned · info = informational · neutral = inactive · accent = brand
+- **Subscription tiers** (`PlanBadge`): uppercase tint chips using the Ditto framework tier tokens — Starter `#955fff` · Pro `#0f9` · Label `#f6c443` · Ditto Plus/RLS = Ditto purple (same treatment as the ditto-trends nav chip)
 - **Buttons** (`Btn`): primary = purple solid (one per page), secondary = quiet outline, danger = red outline for destructive, ghost = tertiary
 
 ## Structure

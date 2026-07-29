@@ -9,7 +9,7 @@
         <div class="min-w-0">
           <div class="flex items-center gap-2.5 flex-wrap">
             <h1 class="text-h1 font-satoshi text-ink">{{ user.forename }} {{ user.surname }}</h1>
-            <StatusBadge variant="accent" :label="user.subscription.plan" />
+            <PlanBadge :plan="user.subscription.plan" />
             <StatusBadge variant="success" :label="user.subscription.status" />
           </div>
           <p class="text-[13px] text-subtext mt-0.5">{{ user.email }} · ID {{ user.id }}</p>
@@ -62,7 +62,7 @@
               </DetailRow>
               <DetailRow label="Access" :value="user.access" />
               <DetailRow label="Subscription">
-                <StatusBadge variant="accent" :label="user.subscription.plan" />
+                <PlanBadge :plan="user.subscription.plan" />
                 <StatusBadge variant="success" :label="user.subscription.status" />
                 <span class="text-subtext">Renews {{ user.subscription.renews }}</span>
                 <Btn size="sm">View subscription</Btn>
@@ -184,6 +184,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import StatusBadge from '../components/ui/StatusBadge.vue'
+import PlanBadge from '../components/ui/PlanBadge.vue'
 import Btn from '../components/ui/Btn.vue'
 import Icon from '../components/ui/Icon.vue'
 import LiquidTabs from '../components/ui/LiquidTabs.vue'
