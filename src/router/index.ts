@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 import DashboardView from '../views/DashboardView.vue'
+import UsersView from '../views/UsersView.vue'
+import UserDetailView from '../views/UserDetailView.vue'
 import PlaceholderView from '../views/PlaceholderView.vue'
 
 // Every legacy admin URL has a route here from day one; screens graduate from
@@ -14,8 +16,8 @@ const routes: RouteRecordRaw[] = [
   { path: '/', component: DashboardView, meta: { title: 'Dashboard' } },
 
   // Customers & Staff
-  placeholder('/users', 'Users'),
-  placeholder('/users/:id', 'User'),
+  { path: '/users', component: UsersView, meta: { title: 'Users' } },
+  { path: '/users/:id', component: UserDetailView, meta: { title: 'User', detail: 'Maya Linden' } },
   placeholder('/credits', 'Credits'),
   placeholder('/labels', 'Labels'),
   placeholder('/kyc-status', 'KYC Status'),
