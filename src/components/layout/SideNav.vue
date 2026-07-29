@@ -2,7 +2,7 @@
   <aside class="fixed inset-y-0 left-0 w-[232px] flex flex-col bg-white border-r border-hairline z-40">
     <!-- Brand -->
     <router-link to="/" class="h-14 px-5 flex items-center gap-2.5 border-b border-hairline flex-shrink-0">
-      <span class="font-satoshi font-black text-lg tracking-tight text-ink leading-none">DI++O</span>
+      <img src="/img/logo-2048-black.svg" alt="Ditto" class="h-6" />
       <span class="text-2xs uppercase bg-accent-soft text-accent px-1.5 py-0.5 rounded leading-none">Admin</span>
     </router-link>
 
