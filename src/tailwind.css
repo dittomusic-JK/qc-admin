@@ -1,0 +1,77 @@
+/* Satoshi Font */
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Satoshi';
+  src: url('/fonts/Satoshi-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Ditto framework colors (shared with ditto-trends) */
+  --ditto-purple: #5f1fff;
+  --ditto-black: #111;
+  --ditto-grey: #626984;
+  --ditto-pro: #0f9;
+  --ditto-label: #f6c443;
+  --purple: #8640f4;
+  --blue: #101f3c;
+  --blue-alternate: #287ef7;
+}
+
+@layer base {
+  html, body {
+    font-family: 'Satoshi', Helvetica, Arial, sans-serif;
+    @apply text-ink bg-surface;
+  }
+
+  button,
+  input,
+  select,
+  textarea {
+    @apply appearance-none bg-transparent border-0 outline-none font-satoshi;
+  }
+
+  /* Data tables read better with lining, equal-width figures */
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
