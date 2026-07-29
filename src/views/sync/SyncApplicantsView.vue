@@ -31,16 +31,16 @@
       </template>
       <template #cell-player="{ row }">
         <button
-          @click="playing = playing === row.id ? null : row.id"
+          @click="toggleTrack(row.id)"
+          :aria-label="activeId === row.id && isPlaying ? `Pause ${row.trackName}` : `Play ${row.trackName}`"
           :class="[
-            'inline-flex items-center gap-2 pl-2 pr-3 h-8 rounded-full border text-xs font-medium transition-colors',
-            playing === row.id
-              ? 'bg-ink text-white border-ink'
-              : 'bg-white text-ink border-hairline-strong hover:bg-lavender-soft'
+            'w-8 h-8 rounded-full flex items-center justify-center transition-colors',
+            activeId === row.id
+              ? 'bg-accent text-white'
+              : 'bg-white text-ink border border-hairline-strong hover:bg-lavender-soft hover:border-prompt'
           ]"
         >
-          <Icon :name="playing === row.id ? 'minus' : 'play'" :size="12" />
-          {{ playing === row.id ? 'Playing…' : 'Play track' }}
+          <Icon :name="activeId === row.id && isPlaying ? 'pause' : 'play'" :size="12" />
         </button>
       </template>
       <template #cell-license="{ row }">
@@ -53,6 +53,18 @@
         <p class="text-xs text-subtext max-w-xs leading-relaxed">{{ row.pitch }}</p>
       </template>
     </DataTable>
+
+    <!-- Spacer so the docked player never covers the last rows -->
+    <div v-if="activeTrack" class="h-20"></div>
+
+    <PlayerBar
+      ref="playerRef"
+      :track="activeTrack"
+      @close="activeId = null"
+      @playing="isPlaying = $event"
+      @previous="step(-1)"
+      @next="step(1)"
+    />
   </div>
 </template>
 
@@ -64,14 +76,42 @@ import DataTable, { type Column } from '../../components/ui/DataTable.vue'
 import StatusBadge from '../../components/ui/StatusBadge.vue'
 import Btn from '../../components/ui/Btn.vue'
 import Icon from '../../components/ui/Icon.vue'
+import PlayerBar, { type PlayerTrack } from '../../components/ui/PlayerBar.vue'
 import { syncOpportunities, syncApplicants as applicants } from '../../data/mockSync'
 
 const route = useRoute()
-const playing = ref<number | null>(null)
+const activeId = ref<number | null>(null)
+const isPlaying = ref(false)
 
 const opportunity = computed(() =>
   syncOpportunities.find(o => o.id === Number(route.params.id)) ?? syncOpportunities[0]
 )
+
+const activeTrack = computed<PlayerTrack | null>(() => {
+  const a = applicants.find(x => x.id === activeId.value)
+  if (!a) return null
+  return { title: a.trackName, artist: a.name, duration: 150 + (a.id * 23) % 120 }
+})
+
+const playerRef = ref<InstanceType<typeof PlayerBar> | null>(null)
+
+// Row button: switch track, or pause/resume when it's already the active one
+const toggleTrack = (id: number) => {
+  if (activeId.value !== id) {
+    activeId.value = id
+  } else if (isPlaying.value) {
+    playerRef.value?.pause()
+  } else {
+    playerRef.value?.play()
+  }
+}
+
+const step = (dir: 1 | -1) => {
+  const i = applicants.findIndex(a => a.id === activeId.value)
+  if (i === -1) return
+  const next = applicants[(i + dir + applicants.length) % applicants.length]
+  activeId.value = next.id
+}
 
 const columns: Column[] = [
   { key: 'applicant', label: 'Applicant' },
