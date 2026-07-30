@@ -199,3 +199,71 @@ export const cannedResponses: CannedResponse[] = [
     es: 'El lanzamiento contiene letras explicitas pero no se marco como explicito. Actualiza la marca de contenido explicito en las pistas afectadas antes de la entrega a tiendas, o sube una version limpia si existe.',
   },
 ]
+
+// --- Release detail sub-sections (mirrors the live admin's view_music sections) ---
+
+export interface ReleaseTrack {
+  number: number
+  title: string
+  mixVersion: string
+  isrc: string
+  language: string
+  explicit: 'Not Explicit' | 'Explicit' | 'Clean'
+  aiLanguageMatch: boolean
+  aiGenerated: boolean
+  file: string
+  streams: number
+  duration: number
+}
+
+export const releaseTracks: ReleaseTrack[] = [
+  { number: 1, title: 'El camión de las cinco', mixVersion: '', isrc: 'GXLF32651134', language: 'Spanish', explicit: 'Not Explicit', aiLanguageMatch: true, aiGenerated: false, file: 'tracks/juan-gomez-el-camion-2026-07-30.mp3', streams: 123, duration: 194 },
+  { number: 2, title: 'Camino de Vuelta', mixVersion: 'Radio Edit', isrc: 'GXLF32651135', language: 'Spanish', explicit: 'Not Explicit', aiLanguageMatch: true, aiGenerated: false, file: 'tracks/juan-gomez-camino-de-vuelta-2026-07-30.mp3', streams: 87, duration: 211 },
+  { number: 3, title: 'Luna de Barrio', mixVersion: '', isrc: 'GXLF32651136', language: 'Spanish', explicit: 'Explicit', aiLanguageMatch: false, aiGenerated: false, file: 'tracks/juan-gomez-luna-de-barrio-2026-07-30.mp3', streams: 45, duration: 176 },
+]
+
+export const releaseArtists = [
+  { name: 'Juan Gomez', type: 'Primary' },
+  { name: 'Los Vientos', type: 'Featuring' },
+]
+
+export interface StoreDelivery {
+  store: string
+  online: boolean
+  type: string
+  status: 'waiting' | 'sent' | 'failed'
+  createdAt: string
+  sentAt: string
+}
+
+export const releaseDeliveries: StoreDelivery[] = [
+  { store: 'iTunes', online: false, type: 'delivery', status: 'waiting', createdAt: 'Thu, Jul 30th 2026, 09:20', sentAt: '' },
+  { store: 'Spotify', online: false, type: 'delivery', status: 'waiting', createdAt: 'Thu, Jul 30th 2026, 09:20', sentAt: '' },
+  { store: 'Amazon', online: true, type: 'delivery', status: 'sent', createdAt: 'Thu, Jul 30th 2026, 09:20', sentAt: 'Thu, Jul 30th 2026, 11:42' },
+  { store: 'Audible Magic', online: false, type: 'delivery', status: 'waiting', createdAt: 'Thu, Jul 30th 2026, 09:21', sentAt: '' },
+  { store: '7digital', online: false, type: 'delivery', status: 'waiting', createdAt: 'Thu, Jul 30th 2026, 09:21', sentAt: '' },
+]
+
+export const releaseSelectedStores = [
+  'iTunes', 'Spotify', 'Amazon', 'Audible Magic', '7digital', 'I Heart Radio', 'Ayoba', 'Deezer', 'LiveOne', 'TIDAL', 'Boomplay', 'TikTok',
+]
+
+export const releaseSales = [
+  { store: 'Spotify', streams: 12480, downloads: 0, revenue: '£31.72' },
+  { store: 'Apple Music', streams: 3211, downloads: 14, revenue: '£18.44' },
+  { store: 'Amazon Music', streams: 902, downloads: 3, revenue: '£4.87' },
+  { store: 'Deezer', streams: 344, downloads: 0, revenue: '£0.91' },
+]
+
+export const ingestionLog = [
+  { status: 'success', message: 'Ingestion Succeeded', time: 'Thu, Jul 30th 2026, 09:20' },
+]
+
+export const qcLog = [
+  { user: 'System User', status: 'Pass Release', track: '', date: 'July 30th, 2026, 09:16' },
+]
+
+export const statusHistory = [
+  { status: 'Incomplete', by: 'System', date: 'July 28th, 2026, 14:02' },
+  { status: 'Processing', by: 'daisy.ditto@dittomusic.com', date: 'July 30th, 2026, 09:15' },
+]
