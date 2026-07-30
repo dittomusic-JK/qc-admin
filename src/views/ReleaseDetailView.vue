@@ -11,12 +11,13 @@
             <h1 class="text-h1 font-satoshi text-ink">{{ release.title }}</h1>
             <StatusBadge variant="warning" label="Incomplete" />
             <StatusBadge variant="danger" label="Not Cleared" />
-            <StatusBadge variant="warning" label="QC Not Passed" />
+            <StatusBadge variant="danger" label="QC Not Passed" />
           </div>
           <p class="text-[13px] text-subtext mt-0.5">{{ release.artist }} · {{ release.barcode }} · ID {{ release.id }}</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
+        <Btn icon="pen">Edit details</Btn>
         <Btn icon="copy">Duplicate release</Btn>
         <Btn variant="danger" icon="flag">Flag account</Btn>
       </div>
@@ -51,35 +52,62 @@
           <div v-if="detailTab === 'main'" class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-4 items-start">
             <div class="space-y-4 min-w-0">
               <DetailList title="Release">
+                <DetailRow label="Release type" value="Single" />
                 <DetailRow label="Title" :value="release.title" />
                 <DetailRow label="Artist" :value="release.artist" />
                 <DetailRow label="Label" :value="release.label" />
                 <DetailRow label="Primary genre" :value="release.primaryGenre" />
                 <DetailRow label="Secondary genre" :value="release.secondaryGenre" />
+                <DetailRow label="Beatport genres">
+                  <span class="text-prompt">Not selected</span>
+                </DetailRow>
+                <DetailRow label="Language" value="English" />
+                <DetailRow label="Copyright holder" :value="release.artist" />
                 <DetailRow label="Copyright year" :value="release.copyrightYear" />
+                <DetailRow label="Production" :value="release.artist" />
                 <DetailRow label="Production year" :value="release.productionYear" />
+                <DetailRow label="Various artists" value="This release is not a compilation" />
                 <DetailRow label="Price band" :value="release.priceBand" />
                 <DetailRow label="UPC/EAN" :value="release.barcode" />
                 <DetailRow label="Release date" :value="release.releaseDate" />
+                <DetailRow label="Release time">
+                  <span class="text-prompt">Not selected</span>
+                </DetailRow>
+                <DetailRow label="Pre-order date">
+                  <span class="text-prompt">—</span>
+                  <span class="text-xs text-subtext">Pre-release option is not selected</span>
+                </DetailRow>
+                <DetailRow label="Original release date">
+                  <span class="text-prompt">—</span>
+                </DetailRow>
                 <DetailRow label="Explicit">
                   <StatusBadge variant="neutral" label="No" />
                 </DetailRow>
               </DetailList>
 
               <DetailList title="Delivery & QC">
+                <DetailRow label="QC pass">
+                  <StatusBadge variant="danger" label="Not Passed" />
+                  <Btn size="sm">Mark as urgent</Btn>
+                </DetailRow>
                 <DetailRow label="IDOL status">
                   <StatusBadge variant="warning" label="Undelivered" />
-                  <Btn size="sm">Select action</Btn>
                 </DetailRow>
-                <DetailRow label="QC pass">
-                  <StatusBadge variant="warning" label="Not Passed" />
-                  <Btn size="sm">Mark as urgent</Btn>
+                <DetailRow label="IDOL actions">
+                  <div class="w-52">
+                    <SelectField
+                      :options="['Please select action', 'Awaiting Ingestion']"
+                      model-value="Please select action"
+                    />
+                  </div>
                 </DetailRow>
                 <DetailRow label="License status">
                   <StatusBadge variant="danger" label="Not Cleared" />
+                  <span class="text-xs text-subtext">0 uncorroborated copyright docs</span>
                 </DetailRow>
-                <DetailRow label="Covers">
+                <DetailRow label="Contains covers">
                   <StatusBadge variant="success" label="No Covers" />
+                  <Btn size="sm" variant="ghost">Change</Btn>
                 </DetailRow>
                 <DetailRow label="Created via">
                   <StatusBadge variant="info" label="Mobile app" />
@@ -92,6 +120,26 @@
                   <StatusBadge variant="neutral" label="No" />
                   <Btn size="sm" variant="ghost">Change</Btn>
                 </DetailRow>
+                <DetailRow label="Change status">
+                  <div class="w-52">
+                    <SelectField :options="releaseStatuses" v-model="releaseStatus" />
+                  </div>
+                </DetailRow>
+              </DetailList>
+
+              <DetailList title="Owner">
+                <DetailRow label="User">
+                  <a href="mailto:khiba.mood@example.com" class="text-info-ink hover:underline">khiba.mood@example.com</a>
+                  <Btn size="sm" icon="user" @click="$router.push('/users/1545390')">View user</Btn>
+                </DetailRow>
+                <DetailRow label="Important release">
+                  <StatusBadge variant="neutral" label="No" />
+                  <Btn size="sm">Mark as important</Btn>
+                </DetailRow>
+                <DetailRow label="Suspected fraud">
+                  <StatusBadge variant="neutral" label="Not flagged" />
+                  <Btn size="sm" variant="danger" icon="flag">Flag account</Btn>
+                </DetailRow>
               </DetailList>
             </div>
 
@@ -102,8 +150,10 @@
                 <Btn size="sm" block icon="upload">Upload artwork</Btn>
                 <Btn size="sm" block>Assign next barcode</Btn>
                 <Btn size="sm" block variant="danger">Unassign barcode</Btn>
+                <Btn size="sm" block variant="danger">Unassign barcode & mark used</Btn>
                 <Btn size="sm" block icon="download">Export metadata CSV</Btn>
                 <Btn size="sm" block icon="download">Download artwork</Btn>
+                <Btn size="sm" block variant="danger" icon="ban">Blacklist all tracks</Btn>
               </div>
 
               <div class="bg-white border border-hairline rounded-card shadow-card p-4 space-y-2">
@@ -112,6 +162,7 @@
                 <div class="pt-1">
                   <Btn size="sm" variant="primary">Update</Btn>
                 </div>
+                <p class="text-xs text-subtext pt-1">Updating regional restriction statuses takes time to process.</p>
               </div>
             </div>
           </div>
@@ -147,6 +198,7 @@ import LiquidTabs from '../components/ui/LiquidTabs.vue'
 import DetailList from '../components/ui/DetailList.vue'
 import DetailRow from '../components/ui/DetailRow.vue'
 import CheckField from '../components/ui/CheckField.vue'
+import SelectField from '../components/ui/SelectField.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import { releaseDetail as release } from '../data/mockReleases'
 
@@ -157,8 +209,25 @@ const detailTabs = [
   { id: 'main', label: 'Main Details' },
   { id: 'artists', label: 'Artists' },
   { id: 'territories', label: 'Territories' },
+  { id: 'label', label: 'Label' },
   { id: 'canned', label: 'Canned Responses' },
 ]
+
+// Full legacy status set from the live admin's Change Status dropdown
+const releaseStatuses = [
+  'Partially Completed',
+  'Processing',
+  'Sent to Stores',
+  'Requested Takedown',
+  'Removed',
+  'Inactive',
+  'Active',
+  'Incomplete',
+  'Approved',
+  'Requires Repair',
+  'External',
+]
+const releaseStatus = ref('Incomplete')
 
 const deselects = reactive<Record<string, boolean>>({
   'AI generated (low effort)': false,
@@ -180,7 +249,10 @@ interface SectionDef {
 const sectionGroups: { label: string; items: SectionDef[] }[] = [
   {
     label: 'Release',
-    items: [{ id: 'details', label: 'Release Details' }],
+    items: [
+      { id: 'details', label: 'Release Details' },
+      { id: 'rls', label: 'Ditto Plus – RLS', emptyIcon: 'shield-check', emptyTitle: 'Ditto Plus – RLS — not in this prototype', emptyHint: 'RLS registration status for this release will appear here.' },
+    ],
   },
   {
     label: 'Content',
@@ -201,6 +273,7 @@ const sectionGroups: { label: string; items: SectionDef[] }[] = [
     items: [
       { id: 'idol-log', label: 'Idol Ingestion Log', emptyIcon: 'clock', emptyTitle: 'No ingestion events', emptyHint: 'This release has not been delivered to IDOL yet.' },
       { id: 'qc-log', label: 'QC Log', emptyIcon: 'clipboard-check', emptyTitle: 'No QC checks logged', emptyHint: 'QC decisions on this release will appear here.' },
+      { id: 'idol-action-log', label: 'Idol Action Status Log', emptyIcon: 'clock', emptyTitle: 'No IDOL actions logged', emptyHint: 'IDOL delivery actions and their outcomes will appear here.' },
       { id: 'status-history', label: 'Status History', emptyIcon: 'refresh', emptyTitle: 'Status History — not in this prototype' },
       { id: 'notes', label: 'Release Notes', count: 0, emptyIcon: 'file-text', emptyTitle: 'No notes', emptyHint: 'Notes added by staff will appear here.' },
       { id: 'copyright-docs', label: 'Copyright Documents', count: 0, emptyIcon: 'shield-check', emptyTitle: 'No copyright documents', emptyHint: 'Uploaded licenses and clearance documents will appear here.' },

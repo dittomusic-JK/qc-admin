@@ -1,5 +1,6 @@
 <template>
-  <nav ref="navRef" class="flex items-center gap-1.5 flex-wrap">
+  <!-- Never wrap: the morph fill is measured on one axis, so overflow scrolls instead -->
+  <nav ref="navRef" class="flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-hide">
     <button
       v-for="(tab, i) in tabs"
       :key="tab.id"
