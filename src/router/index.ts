@@ -13,6 +13,7 @@ import SubscriptionsView from '../views/SubscriptionsView.vue'
 import CommissionsView from '../views/CommissionsView.vue'
 import ApprovalQueueView from '../views/ApprovalQueueView.vue'
 import QcReviewView from '../views/qc/QcReviewView.vue'
+import ReviewerProfileView from '../views/qc/ReviewerProfileView.vue'
 import LyricsQcView from '../views/qc/LyricsQcView.vue'
 import LyricsQcPlusView from '../views/qc/LyricsQcPlusView.vue'
 import IngestionQueueView from '../views/qc/IngestionQueueView.vue'
@@ -70,6 +71,7 @@ const routes: RouteRecordRaw[] = [
 
   // Idol / QC
   { path: '/qc/review', component: QcReviewView, meta: { title: 'QC Review' } },
+  { path: '/qc/team/:id', component: ReviewerProfileView, meta: { title: 'Reviewer' } },
   { path: '/qc/lyrics', component: LyricsQcView, meta: { title: 'Lyrics QC' } },
   { path: '/qc/lyrics-ditto-plus', component: LyricsQcPlusView, meta: { title: 'Ditto+ Lyrics QC' } },
   { path: '/qc/ingestion-queue', component: IngestionQueueView, meta: { title: 'Ingestion Queue' } },

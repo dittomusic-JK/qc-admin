@@ -5,36 +5,91 @@
       <div class="min-w-0">
         <h1 class="text-h1 font-satoshi text-ink">QC Review</h1>
         <p class="text-[13px] text-subtext mt-0.5">
-          Ingestion queue ·
-          <span v-if="!done" class="tabular-nums">release {{ position }} of {{ total }} · {{ remaining }} remaining<template v-if="skippedCount"> · {{ skippedCount }} skipped, still in queue</template></span>
+          Priority feed ·
+          <span v-if="shiftState === 'ended'">shift ended</span>
+          <span v-else-if="shiftState === 'paused'">shift paused</span>
+          <span v-else-if="!done" class="tabular-nums">release {{ position }} of {{ total }} · {{ remaining }} remaining<template v-if="skippedCount"> · {{ skippedCount }} skipped, still in queue</template></span>
           <span v-else>queue clear</span>
         </p>
       </div>
 
-      <!-- Shift stats strip -->
-      <div class="flex items-stretch bg-white border border-hairline rounded-card shadow-card divide-x divide-hairline">
-        <div v-for="s in sessionStats" :key="s.label" class="px-4 py-2 min-w-[92px]">
-          <p class="text-2xs uppercase text-prompt">{{ s.label }}</p>
-          <p class="text-[15px] font-bold text-ink tabular-nums leading-5 mt-0.5">
-            {{ s.value }}<span v-if="s.unit" class="text-xs font-medium text-subtext ml-0.5">{{ s.unit }}</span>
-          </p>
+      <div class="flex items-center gap-2 flex-wrap">
+        <!-- Shift stats strip -->
+        <div class="flex items-stretch bg-white border border-hairline rounded-card shadow-card divide-x divide-hairline">
+          <div v-for="s in sessionStats" :key="s.label" class="px-4 py-2 min-w-[88px]">
+            <p class="text-2xs uppercase text-prompt">{{ s.label }}</p>
+            <p class="text-[15px] font-bold text-ink tabular-nums leading-5 mt-0.5">
+              {{ s.value }}<span v-if="s.unit" class="text-xs font-medium text-subtext ml-0.5">{{ s.unit }}</span>
+            </p>
+          </div>
         </div>
+
+        <!-- Shift controls -->
+        <Btn v-if="shiftState === 'active'" icon="pause" @click="pauseShift">Pause</Btn>
+        <Btn v-if="shiftState === 'paused'" variant="primary" icon="play" @click="resumeShift">Resume</Btn>
+        <Btn v-if="shiftState !== 'ended'" variant="danger" icon="logout" @click="endShift">End shift</Btn>
+        <Btn v-else variant="primary" icon="play" @click="startShift">Start shift</Btn>
       </div>
     </div>
 
     <!-- Queue progress -->
-    <div class="h-1 rounded-full bg-lavender overflow-hidden mb-5">
+    <div v-if="shiftState !== 'ended'" class="h-1 rounded-full bg-lavender overflow-hidden mb-5">
       <div class="h-full bg-accent transition-[width] duration-300" :style="{ width: `${progress * 100}%` }"></div>
     </div>
 
-    <!-- Session complete -->
-    <div v-if="done" class="bg-white border border-hairline rounded-card shadow-card max-w-2xl mx-auto">
+    <!-- Shift ended -->
+    <div v-if="shiftState === 'ended'" class="bg-white border border-hairline rounded-card shadow-card max-w-2xl mx-auto">
+      <div class="px-6 py-8 text-center border-b border-hairline">
+        <span class="w-12 h-12 rounded-full bg-accent-soft text-accent inline-flex items-center justify-center mb-3">
+          <Icon name="clock" :size="22" />
+        </span>
+        <h2 class="text-h2 text-ink">Shift ended</h2>
+        <p class="text-[13px] text-subtext mt-1">Your shift at a glance. Output has been logged to the team leaderboard.</p>
+      </div>
+      <div class="grid grid-cols-3 sm:grid-cols-6 divide-x divide-hairline border-b border-hairline">
+        <div v-for="s in endedStats" :key="s.label" class="px-3 py-3 text-center">
+          <p class="text-2xs uppercase text-prompt">{{ s.label }}</p>
+          <p class="text-lg font-bold text-ink tabular-nums mt-0.5">{{ s.value }}</p>
+        </div>
+      </div>
+      <div v-if="reasonBreakdown.length" class="px-6 py-4 border-b border-hairline">
+        <p class="text-2xs uppercase text-prompt mb-2">Flag reasons this session</p>
+        <div class="space-y-1.5">
+          <div v-for="r in reasonBreakdown" :key="r.label" class="flex items-center justify-between text-[13px]">
+            <span class="text-ink">{{ r.label }}</span>
+            <span class="text-subtext tabular-nums">{{ r.count }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="px-6 py-4 flex items-center justify-center gap-2">
+        <Btn variant="primary" icon="play" @click="startShift">Start new shift</Btn>
+        <Btn icon="inbox" @click="$router.push('/qc/ingestion-queue')">Back to Ingestion Queue</Btn>
+      </div>
+    </div>
+
+    <!-- Shift paused -->
+    <div v-else-if="shiftState === 'paused'" class="bg-white border border-hairline rounded-card shadow-card max-w-2xl mx-auto px-6 py-10 text-center">
+      <span class="w-12 h-12 rounded-full bg-warning/10 text-warning-ink inline-flex items-center justify-center mb-3">
+        <Icon name="pause" :size="22" />
+      </span>
+      <h2 class="text-h2 text-ink">Shift paused</h2>
+      <p class="text-[13px] text-subtext mt-1 max-w-sm mx-auto">
+        The shift timer is stopped — paused time never counts against your rate. Resume to keep working the priority feed.
+      </p>
+      <div class="flex items-center justify-center gap-2 mt-5">
+        <Btn variant="primary" icon="play" @click="resumeShift">Resume shift</Btn>
+        <Btn variant="danger" icon="logout" @click="endShift">End shift</Btn>
+      </div>
+    </div>
+
+    <!-- Queue clear -->
+    <div v-else-if="done" class="bg-white border border-hairline rounded-card shadow-card max-w-2xl mx-auto">
       <div class="px-6 py-8 text-center border-b border-hairline">
         <span class="w-12 h-12 rounded-full bg-success/10 text-success-ink inline-flex items-center justify-center mb-3">
           <Icon name="check" :size="22" />
         </span>
         <h2 class="text-h2 text-ink">Queue clear</h2>
-        <p class="text-[13px] text-subtext mt-1">Every release in this session has been processed.</p>
+        <p class="text-[13px] text-subtext mt-1">Every release in the feed has been processed. In production the feed keeps filling as new releases enter QC.</p>
       </div>
       <div class="grid grid-cols-2 sm:grid-cols-4 divide-x divide-hairline border-b border-hairline">
         <div v-for="s in summaryStats" :key="s.label" class="px-4 py-3 text-center">
@@ -52,14 +107,27 @@
         </div>
       </div>
       <div class="px-6 py-4 flex items-center justify-center gap-2">
-        <Btn variant="primary" icon="inbox" @click="$router.push('/qc/ingestion-queue')">Back to Ingestion Queue</Btn>
+        <Btn variant="primary" icon="logout" @click="endShift">End shift</Btn>
+        <Btn icon="inbox" @click="$router.push('/qc/ingestion-queue')">Back to Ingestion Queue</Btn>
         <Btn icon="refresh" @click="undo" v-if="decisions.length">Undo last decision</Btn>
       </div>
     </div>
 
     <!-- Review workspace -->
     <Transition v-else name="qc-item" mode="out-in">
-      <div :key="current.id" class="grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)_320px] gap-4 items-start">
+      <div :key="current.id">
+        <!-- Priority: why this release is next -->
+        <div class="flex flex-wrap items-center gap-2 mb-4 bg-white border border-hairline rounded-card shadow-card px-4 py-2.5">
+          <span class="inline-flex items-center gap-1.5 text-xs font-bold text-accent bg-accent-soft rounded-full px-2.5 py-1">
+            <Icon name="filter" :size="11" /> Priority {{ priorityScore(current) }}
+          </span>
+          <span v-for="f in priorityFactors(current)" :key="f" class="text-xs font-medium text-subtext bg-lavender rounded-full px-2.5 py-1">{{ f }}</span>
+          <span v-if="nextUp" class="ml-auto text-xs text-prompt">
+            Up next: <span class="text-subtext font-medium">{{ nextUp.title }} — {{ nextUp.artist }}</span> · {{ priorityScore(nextUp) }}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-[280px_minmax(0,1fr)_320px] gap-4 items-start">
         <!-- Left: artwork + release facts -->
         <div class="space-y-4">
           <div class="bg-white border border-hairline rounded-card shadow-card overflow-hidden">
@@ -241,6 +309,7 @@
             <p v-if="!selectedReasons.size" class="text-xs text-prompt text-center">Flagging requires at least one reason.</p>
           </div>
         </div>
+        </div>
       </div>
     </Transition>
 
@@ -263,7 +332,15 @@ import Icon from '../../components/ui/Icon.vue'
 import StatusBadge from '../../components/ui/StatusBadge.vue'
 import TextAreaField from '../../components/ui/TextAreaField.vue'
 import PlayerBar, { type PlayerTrack } from '../../components/ui/PlayerBar.vue'
-import { qcReviewQueue, flagReasons, qcShift, type CheckStatus, type QcReviewItem } from '../../data/mockQc'
+import {
+  qcReviewQueue,
+  flagReasons,
+  qcShift,
+  priorityScore,
+  priorityFactors,
+  type CheckStatus,
+  type QcReviewItem,
+} from '../../data/mockQc'
 
 type Action = 'pass' | 'flag' | 'skip'
 
@@ -273,10 +350,12 @@ interface Decision {
   reasons: number[]
 }
 
-// Skipping never removes a release from the queue — it only moves it to the
-// back of this reviewer's session. Every release still needs a pass/flag.
+// The feed is priority-ordered — highest score first — and assigns the next
+// release automatically after every decision. Skipping never removes a release
+// from the queue: it only moves it to the back of this reviewer's session.
 const total = qcReviewQueue.length
-const pending = ref<QcReviewItem[]>([...qcReviewQueue])
+const byPriority = (items: QcReviewItem[]) => [...items].sort((a, b) => priorityScore(b) - priorityScore(a))
+const pending = ref<QcReviewItem[]>(byPriority(qcReviewQueue))
 const decisions = ref<Decision[]>([])
 const skippedIds = ref(new Set<number>())
 const selectedReasons = ref(new Set<number>())
@@ -284,10 +363,58 @@ const note = ref('')
 
 const done = computed(() => pending.value.length === 0)
 const current = computed(() => pending.value[0] ?? qcReviewQueue[0])
+const nextUp = computed(() => pending.value[1] ?? null)
 const position = computed(() => Math.min(decisions.value.length + 1, total))
 const remaining = computed(() => Math.max(pending.value.length - 1, 0))
 const progress = computed(() => decisions.value.length / total)
 const skippedCount = computed(() => pending.value.filter(r => skippedIds.value.has(r.id)).length)
+
+// ── Shift state ──────────────────────────────────────────────────────────────
+// The timer only accrues while the shift is active; paused time never counts
+// against the rate. Loads mid-shift from the seeded baseline for the demo.
+
+type ShiftState = 'active' | 'paused' | 'ended'
+const shiftState = ref<ShiftState>('active')
+const seed = ref({ ...qcShift })
+const accumulatedMs = ref(0)
+const resumedAt = ref(Date.now())
+const now = ref(Date.now())
+
+const activeHours = computed(() => {
+  const liveMs = accumulatedMs.value + (shiftState.value === 'active' ? now.value - resumedAt.value : 0)
+  return seed.value.activeHours + liveMs / 3_600_000
+})
+
+const pauseShift = () => {
+  if (shiftState.value !== 'active') return
+  accumulatedMs.value += Date.now() - resumedAt.value
+  shiftState.value = 'paused'
+}
+
+const resumeShift = () => {
+  if (shiftState.value !== 'paused') return
+  resumedAt.value = Date.now()
+  now.value = Date.now()
+  shiftState.value = 'active'
+}
+
+const endShift = () => {
+  if (shiftState.value === 'active') accumulatedMs.value += Date.now() - resumedAt.value
+  now.value = Date.now()
+  shiftState.value = 'ended'
+}
+
+const startShift = () => {
+  seed.value = { activeHours: 0, reviewed: 0, approved: 0, flagged: 0 }
+  decisions.value = []
+  skippedIds.value = new Set()
+  pending.value = byPriority(qcReviewQueue)
+  accumulatedMs.value = 0
+  resumedAt.value = Date.now()
+  now.value = Date.now()
+  resetItemState()
+  shiftState.value = 'active'
+}
 
 // ── Session analytics ────────────────────────────────────────────────────────
 // Shift baseline (since 09:00) + everything decided in this live session.
@@ -296,22 +423,25 @@ const sessionPassed = computed(() => decisions.value.filter(d => d.action === 'p
 const sessionFlagged = computed(() => decisions.value.filter(d => d.action === 'flag').length)
 const sessionReviewed = computed(() => sessionPassed.value + sessionFlagged.value)
 
-const shiftReviewed = computed(() => qcShift.reviewed + sessionReviewed.value)
-const shiftApproved = computed(() => qcShift.approved + sessionPassed.value)
+const shiftReviewed = computed(() => seed.value.reviewed + sessionReviewed.value)
+const shiftApproved = computed(() => seed.value.approved + sessionPassed.value)
+const shiftFlagged = computed(() => seed.value.flagged + sessionFlagged.value)
 
-const mountedAt = Date.now()
-const hoursOnShift = () => qcShift.hoursElapsed + (Date.now() - mountedAt) / 3_600_000
-
-const perHour = computed(() => (shiftReviewed.value / hoursOnShift()).toFixed(1))
+const perHour = computed(() => (shiftReviewed.value / Math.max(activeHours.value, 0.25)).toFixed(1))
 const approvedPct = computed(() =>
   shiftReviewed.value ? Math.round((shiftApproved.value / shiftReviewed.value) * 100) : 0
 )
+
+const shiftClock = computed(() => {
+  const totalMin = Math.floor(activeHours.value * 60)
+  return `${Math.floor(totalMin / 60)}:${String(totalMin % 60).padStart(2, '0')}`
+})
 
 const sessionStats = computed(() => [
   { label: 'Shift output', value: String(shiftReviewed.value), unit: '' },
   { label: 'Per hour', value: perHour.value, unit: '/hr' },
   { label: 'Approved', value: String(approvedPct.value), unit: '%' },
-  { label: 'This session', value: String(sessionReviewed.value), unit: '' },
+  { label: 'Shift time', value: shiftClock.value, unit: '' },
 ])
 
 const summaryStats = computed(() => [
@@ -319,6 +449,15 @@ const summaryStats = computed(() => [
   { label: 'Passed', value: String(sessionPassed.value) },
   { label: 'Flagged', value: String(sessionFlagged.value) },
   { label: 'Shift rate', value: `${perHour.value}/hr` },
+])
+
+const endedStats = computed(() => [
+  { label: 'Reviewed', value: String(shiftReviewed.value) },
+  { label: 'Passed', value: String(shiftApproved.value) },
+  { label: 'Flagged', value: String(shiftFlagged.value) },
+  { label: 'Per hour', value: perHour.value },
+  { label: 'Approved', value: `${approvedPct.value}%` },
+  { label: 'Active time', value: shiftClock.value },
 ])
 
 const reasonBreakdown = computed(() => {
@@ -373,7 +512,7 @@ const resetItemState = () => {
 }
 
 const decide = (action: Action) => {
-  if (done.value) return
+  if (done.value || shiftState.value !== 'active') return
   if (action === 'flag' && !selectedReasons.value.size) return
   if (action === 'skip') {
     // Personal pass-over: rotate to the back of the queue, still undecided.
@@ -395,6 +534,7 @@ const decide = (action: Action) => {
 }
 
 const undo = () => {
+  if (shiftState.value !== 'active') return
   const last = decisions.value.pop()
   if (!last) return
   const item = qcReviewQueue.find(r => r.id === last.id)
@@ -448,6 +588,7 @@ const onKeydown = (e: KeyboardEvent) => {
   const target = e.target as HTMLElement
   if (e.metaKey || e.ctrlKey || e.altKey) return
   if (['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+  if (shiftState.value !== 'active') return
 
   if (done.value) {
     if (e.key.toLowerCase() === 'u') { e.preventDefault(); undo() }
@@ -482,8 +623,16 @@ const onKeydown = (e: KeyboardEvent) => {
   }
 }
 
-onMounted(() => window.addEventListener('keydown', onKeydown))
-onUnmounted(() => window.removeEventListener('keydown', onKeydown))
+let clock: ReturnType<typeof setInterval> | null = null
+
+onMounted(() => {
+  window.addEventListener('keydown', onKeydown)
+  clock = setInterval(() => { now.value = Date.now() }, 1000)
+})
+onUnmounted(() => {
+  window.removeEventListener('keydown', onKeydown)
+  if (clock) clearInterval(clock)
+})
 </script>
 
 <style scoped>

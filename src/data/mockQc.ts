@@ -77,6 +77,15 @@ export interface QcReviewTrack {
   aiLanguageMatch: boolean
 }
 
+export interface QcPriorityMeta {
+  highProfile: boolean
+  newUser: boolean
+  earnings12m: number
+  daysToRelease: number
+  daysToPitch: number | null
+  daysInQueue: number
+}
+
 export interface QcReviewItem {
   id: number
   title: string
@@ -94,8 +103,39 @@ export interface QcReviewItem {
   priorFlags: number
   memberSince: string
   art: string
+  priority: QcPriorityMeta
   autoChecks: QcAutoCheck[]
   tracks: QcReviewTrack[]
+}
+
+// Queue priority: the feed works highest score first, so reviewers never
+// hand-pick from a spreadsheet. Weights are prototype values for the algorithm
+// agreed with the QC team.
+export const priorityScore = (item: QcReviewItem): number => {
+  const p = item.priority
+  let s = 0
+  if (p.highProfile) s += 40
+  if (p.daysToPitch !== null) s += Math.max(30 - p.daysToPitch * 2, 0)
+  s += Math.max(25 - p.daysToRelease, 0)
+  if (p.newUser) s += 15
+  s += p.earnings12m >= 10_000 ? 20 : p.earnings12m >= 1_000 ? 10 : 0
+  s += item.plan === 'Label' ? 10 : item.plan === 'Pro' ? 5 : 0
+  // Completed well ahead of release date typically signals a good release.
+  s += Math.min(Math.round(p.daysInQueue * 1.5), 12)
+  return Math.round(s)
+}
+
+export const priorityFactors = (item: QcReviewItem): string[] => {
+  const p = item.priority
+  const f: string[] = []
+  if (p.highProfile) f.push('High-profile artist')
+  if (p.daysToPitch !== null && p.daysToPitch <= 14) f.push(`Pitch in ${p.daysToPitch}d`)
+  if (p.daysToRelease <= 21) f.push(`Release in ${p.daysToRelease}d`)
+  if (p.newUser) f.push('New user')
+  if (p.earnings12m >= 10_000) f.push('High-earning user')
+  if (item.plan !== 'Starter') f.push(`${item.plan} plan`)
+  if (p.daysInQueue >= 7) f.push(`${p.daysInQueue}d in queue`)
+  return f
 }
 
 export interface FlagReason {
@@ -123,6 +163,7 @@ export const qcReviewQueue: QcReviewItem[] = [
     genre: 'Kompa', language: 'French', barcode: '5063721995421', releaseDate: 'August 14th, 2026',
     uploadedDate: 'July 28th, 2026', priorFlags: 0, memberSince: 'March 2024',
     art: 'from-[#5f1fff] to-[#287ef7]',
+    priority: { highProfile: false, newUser: false, earnings12m: 3400, daysToRelease: 9, daysToPitch: 4, daysInQueue: 8 },
     autoChecks: [
       { label: 'Artwork resolution', status: 'pass', detail: '3000 × 3000 px, no borders detected' },
       { label: 'Artwork text scan', status: 'pass', detail: 'Title and artist match metadata' },
@@ -140,6 +181,7 @@ export const qcReviewQueue: QcReviewItem[] = [
     genre: 'Alt Pop', language: 'English', barcode: '5063721995445', releaseDate: 'August 21st, 2026',
     uploadedDate: 'July 28th, 2026', priorFlags: 2, memberSince: 'January 2026',
     art: 'from-[#ee404c] to-[#ffb100]',
+    priority: { highProfile: false, newUser: true, earnings12m: 120, daysToRelease: 16, daysToPitch: null, daysInQueue: 8 },
     autoChecks: [
       { label: 'Artwork resolution', status: 'pass', detail: '3000 × 3000 px' },
       { label: 'Artwork text scan', status: 'warn', detail: 'Detected extra text: "OUT NOW" — likely promotional' },
@@ -160,6 +202,7 @@ export const qcReviewQueue: QcReviewItem[] = [
     genre: 'Chanson', language: 'French', barcode: '5063721995469', releaseDate: 'September 4th, 2026',
     uploadedDate: 'July 27th, 2026', priorFlags: 0, memberSince: 'August 2023',
     art: 'from-[#00d346] to-[#287ef7]',
+    priority: { highProfile: false, newUser: false, earnings12m: 12800, daysToRelease: 30, daysToPitch: 12, daysInQueue: 9 },
     autoChecks: [
       { label: 'Artwork resolution', status: 'pass', detail: '4000 × 4000 px' },
       { label: 'Artwork text scan', status: 'pass', detail: 'Title and artist match metadata' },
@@ -178,6 +221,7 @@ export const qcReviewQueue: QcReviewItem[] = [
     genre: 'Afrobeats', language: 'English', barcode: '5063721995483', releaseDate: 'August 28th, 2026',
     uploadedDate: 'July 27th, 2026', priorFlags: 1, memberSince: 'June 2022',
     art: 'from-[#ffb100] to-[#ee404c]',
+    priority: { highProfile: true, newUser: false, earnings12m: 22000, daysToRelease: 23, daysToPitch: 9, daysInQueue: 9 },
     autoChecks: [
       { label: 'Artwork resolution', status: 'pass', detail: '3000 × 3000 px' },
       { label: 'Artwork text scan', status: 'pass', detail: 'Title and artist match metadata' },
@@ -199,6 +243,7 @@ export const qcReviewQueue: QcReviewItem[] = [
     genre: 'Indian Classical Fusion', language: 'Hindi', barcode: '', releaseDate: 'August 7th, 2026',
     uploadedDate: 'July 26th, 2026', priorFlags: 0, memberSince: 'May 2026',
     art: 'from-[#287ef7] to-[#00d346]',
+    priority: { highProfile: false, newUser: true, earnings12m: 0, daysToRelease: 2, daysToPitch: null, daysInQueue: 10 },
     autoChecks: [
       { label: 'Artwork resolution', status: 'warn', detail: '1400 × 1400 px — below 3000 px recommendation' },
       { label: 'Artwork text scan', status: 'pass', detail: 'Title and artist match metadata' },
@@ -218,6 +263,7 @@ export const qcReviewQueue: QcReviewItem[] = [
     genre: 'Electronic', language: 'English', barcode: '5063721995512', releaseDate: 'September 11th, 2026',
     uploadedDate: 'July 26th, 2026', priorFlags: 0, memberSince: 'February 2023',
     art: 'from-[#f6c443] to-[#955fff]',
+    priority: { highProfile: true, newUser: false, earnings12m: 8200, daysToRelease: 37, daysToPitch: 6, daysInQueue: 10 },
     autoChecks: [
       { label: 'Artwork resolution', status: 'pass', detail: '3000 × 3000 px' },
       { label: 'Artwork text scan', status: 'fail', detail: 'Remixer names on artwork missing from metadata' },
@@ -237,6 +283,7 @@ export const qcReviewQueue: QcReviewItem[] = [
     genre: 'Indie Rock', language: 'English', barcode: '5063721995536', releaseDate: 'August 21st, 2026',
     uploadedDate: 'July 25th, 2026', priorFlags: 3, memberSince: 'November 2021',
     art: 'from-[#101f3c] to-[#5f1fff]',
+    priority: { highProfile: false, newUser: false, earnings12m: 15400, daysToRelease: 16, daysToPitch: null, daysInQueue: 11 },
     autoChecks: [
       { label: 'Artwork resolution', status: 'pass', detail: '3000 × 3000 px' },
       { label: 'Artwork text scan', status: 'pass', detail: 'Title and artist match metadata' },
@@ -255,6 +302,7 @@ export const qcReviewQueue: QcReviewItem[] = [
     genre: 'Hip Hop', language: 'English', barcode: '5063721995550', releaseDate: 'August 14th, 2026',
     uploadedDate: 'July 24th, 2026', priorFlags: 1, memberSince: 'September 2024',
     art: 'from-[#955fff] to-[#ee404c]',
+    priority: { highProfile: false, newUser: false, earnings12m: 5100, daysToRelease: 9, daysToPitch: 3, daysInQueue: 12 },
     autoChecks: [
       { label: 'Artwork resolution', status: 'pass', detail: '3000 × 3000 px' },
       { label: 'Artwork text scan', status: 'pass', detail: 'Title and artist match metadata' },
@@ -271,44 +319,295 @@ export const qcReviewQueue: QcReviewItem[] = [
 // ── QC session + team analytics ──────────────────────────────────────────────
 // Shift baseline for the signed-in reviewer. Live session actions add on top.
 
+// In-progress shift baseline for the signed-in reviewer (active hours only —
+// paused time never accrues). Live session actions add on top.
 export const qcShift = {
-  hoursElapsed: 4.5,
-  reviewed: 34,
-  approved: 29,
-  flagged: 5,
+  activeHours: 4.0,
+  reviewed: 52,
+  approved: 45,
+  flagged: 7,
+}
+
+export type QcPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year'
+
+export interface QcPeriodStats {
+  reviewed: number
+  perHour: number
+  approvedPct: number
 }
 
 export interface QcTeamMember {
+  id: string
   name: string
   initials: string
+  role: string
   you?: boolean
   online: boolean
-  reviewedToday: number
-  perHour: number
-  approvedPct: number
-  accuracyPct: number
-  week: number[]
+  stats: Record<QcPeriod, QcPeriodStats>
 }
 
-// Team target: 7 releases/hour at ≥97% audit accuracy.
-export const qcTeamTarget = { perHour: 7, accuracyPct: 97 }
+// Rate bands (releases/hour): green at/above 12.5, amber 10–12.5, red below 10.
+export const qcRateBands = { green: 12.5, amber: 10 }
+
+export const qcQueueRemaining = 48
+
+// Approximate QC-active hours per period, used to derive reviewed volumes.
+const periodHours: Record<QcPeriod, number> = { day: 7.5, week: 37, month: 160, quarter: 470, year: 1880 }
+
+// drift shifts the longer-period averages so history differs from today.
+const buildStats = (perHour: number, approvedPct: number, drift: number): Record<QcPeriod, QcPeriodStats> => {
+  const out = {} as Record<QcPeriod, QcPeriodStats>
+  ;(Object.keys(periodHours) as QcPeriod[]).forEach((p, i) => {
+    const rate = Math.max(+(perHour + drift * i).toFixed(1), 1)
+    out[p] = {
+      reviewed: Math.round(rate * periodHours[p]),
+      perHour: rate,
+      approvedPct: Math.min(Math.round(approvedPct + (i % 2 ? -i : i) * 0.5), 99),
+    }
+  })
+  return out
+}
 
 export const qcTeam: QcTeamMember[] = [
-  { name: 'Rosa Delgado', initials: 'RD', online: true, reviewedToday: 61, perHour: 9.4, approvedPct: 84, accuracyPct: 99.1, week: [52, 58, 49, 61, 55, 63, 61] },
-  { name: 'Priya Nair', initials: 'PN', online: true, reviewedToday: 57, perHour: 8.8, approvedPct: 88, accuracyPct: 98.6, week: [44, 51, 55, 48, 57, 54, 57] },
-  { name: 'Milo Fenwick', initials: 'MF', online: true, reviewedToday: 52, perHour: 8.0, approvedPct: 81, accuracyPct: 99.4, week: [47, 45, 50, 52, 49, 51, 52] },
-  { name: 'James Keane', initials: 'JK', you: true, online: true, reviewedToday: 34, perHour: 7.6, approvedPct: 85, accuracyPct: 98.2, week: [38, 41, 36, 44, 40, 37, 34] },
-  { name: 'Tessa Marchetti', initials: 'TM', online: true, reviewedToday: 41, perHour: 6.3, approvedPct: 90, accuracyPct: 97.8, week: [45, 42, 39, 41, 44, 40, 41] },
-  { name: 'Callum Boyd', initials: 'CB', online: false, reviewedToday: 28, perHour: 5.6, approvedPct: 92, accuracyPct: 96.4, week: [31, 29, 33, 27, 30, 26, 28] },
-  { name: 'Aisha Bello', initials: 'AB', online: true, reviewedToday: 24, perHour: 4.9, approvedPct: 79, accuracyPct: 98.9, week: [28, 25, 22, 26, 23, 27, 24] },
-  { name: 'Jonas Weber', initials: 'JW', online: false, reviewedToday: 17, perHour: 4.1, approvedPct: 94, accuracyPct: 95.2, week: [22, 19, 24, 18, 21, 16, 17] },
+  { id: 'rosa-delgado', name: 'Rosa Delgado', initials: 'RD', role: 'Senior QC Agent', online: true, stats: buildStats(14.2, 84, -0.3) },
+  { id: 'priya-nair', name: 'Priya Nair', initials: 'PN', role: 'QC Agent', online: true, stats: buildStats(13.1, 88, 0.2) },
+  { id: 'milo-fenwick', name: 'Milo Fenwick', initials: 'MF', role: 'QC Agent', online: true, stats: buildStats(12.7, 81, -0.2) },
+  { id: 'tessa-marchetti', name: 'Tessa Marchetti', initials: 'TM', role: 'Senior QC Agent', online: true, stats: buildStats(11.8, 90, 0.3) },
+  { id: 'james-keane', name: 'James Keane', initials: 'JK', role: 'QC Manager', you: true, online: true, stats: buildStats(11.2, 85, 0.1) },
+  { id: 'callum-boyd', name: 'Callum Boyd', initials: 'CB', role: 'QC Agent', online: false, stats: buildStats(10.4, 92, -0.4) },
+  { id: 'aisha-bello', name: 'Aisha Bello', initials: 'AB', role: 'QC Agent', online: true, stats: buildStats(9.1, 79, 0.5) },
+  { id: 'jonas-weber', name: 'Jonas Weber', initials: 'JW', role: 'QC Agent', online: false, stats: buildStats(7.8, 94, 0.6) },
 ]
 
-export const qcTeamToday = {
-  reviewed: 314,
-  avgPerHour: 6.8,
-  approvedPct: 86,
-  queueRemaining: 48,
+// ── Reviewer monitoring detail ───────────────────────────────────────────────
+// Per-agent drill-down for the manager view: pause behaviour, decision speed,
+// flag usage and the raw decision log. "Now" is pinned to 16:20 for the demo.
+
+export const QC_NOW_MIN = 16 * 60 + 20
+export const SHIFT_WINDOW = { start: 8 * 60 + 30, end: 17 * 60 + 30 }
+
+export interface PauseEntry {
+  at: string
+  mins: number
+}
+
+export interface DecisionRow {
+  time: string
+  releaseId: number
+  title: string
+  artist: string
+  action: 'Pass' | 'Flag'
+  secs: number
+  reason: string
+}
+
+// A full dated shift record — the profile view can replay any day, not just
+// today. shifts[0] is today; earlier entries are prior working days.
+export interface ShiftRecord {
+  date: string
+  today?: boolean
+  clockIn: string
+  clockOut: string | null
+  reviewed: number
+  perHour: number
+  approvedPct: number
+  active: string
+  pausedMin: number
+  pauses: PauseEntry[]
+  skips: number
+  undos: number
+  avgDecisionSec: number
+  fastestSec: number
+  slowestSec: number
+  flagUsage: { label: string; count: number }[]
+  decisions: DecisionRow[]
+}
+
+export interface ReviewerDetail {
+  shifts: ShiftRecord[]
+}
+
+const fmtClock = (mins: number) => `${Math.floor(mins / 60)}:${String(mins % 60).padStart(2, '0')}`
+
+const decisionPool = [
+  ...qcReviewQueue.map(r => ({ releaseId: r.id, title: r.title, artist: r.artist })),
+  { releaseId: 6733287, title: 'Cielo Abierto (Live)', artist: 'Sofia Reyes' },
+  { releaseId: 6733260, title: 'Static Bloom (Remaster)', artist: 'Velvet Antenna' },
+  { releaseId: 6733244, title: 'Accra Sunrise', artist: 'Kofi Mensah' },
+  { releaseId: 6733231, title: 'Polar Nights (Deluxe)', artist: 'Emma Lindqvist' },
+]
+
+const makeDecisions = (lastMin: number, gapMin: number, avgSec: number, offset: number, flagEvery: number): DecisionRow[] =>
+  Array.from({ length: 8 }, (_, i) => {
+    const p = decisionPool[(offset + i) % decisionPool.length]
+    const flagged = (i + offset) % flagEvery === 0
+    return {
+      time: fmtClock(lastMin - i * gapMin),
+      ...p,
+      action: flagged ? 'Flag' : 'Pass',
+      secs: Math.round(avgSec * (0.6 + ((i * 7 + offset) % 9) / 10)),
+      reason: flagged ? flagReasons[(offset + i) % flagReasons.length].label : '',
+    }
+  })
+
+const toMin = (clock: string) => {
+  const [h, m] = clock.split(':').map(Number)
+  return h * 60 + m
+}
+
+const shiftDates = ['Wed 5 Aug', 'Tue 4 Aug', 'Mon 3 Aug', 'Fri 31 Jul', 'Thu 30 Jul', 'Wed 29 Jul']
+
+// Per-reviewer baseline; past days are deterministic variations of it so every
+// dated shift looks genuinely different without hand-writing 48 records.
+interface ReviewerShiftCfg {
+  seed: number
+  perHour: number
+  approvedPct: number
+  clockIn: string
+  clockOut: string | null
+  pauses: PauseEntry[]
+  skips: number
+  undos: number
+  avgDecisionSec: number
+  fastestSec: number
+  slowestSec: number
+  gapMin: number
+  flagEvery: number
+  flagUsage: { label: string; count: number }[]
+}
+
+const jitterPauses = (pauses: PauseEntry[], i: number, seed: number): PauseEntry[] =>
+  pauses
+    .filter((_, pi) => pauses.length === 1 || (i + seed + pi) % 5 !== 0)
+    .map((p, pi) => ({
+      at: fmtClock(toMin(p.at) + ((i * 9 + pi * 5 + seed) % 23) - 11),
+      mins: Math.max(5, Math.round(p.mins * (0.75 + ((i + pi + seed) % 4) * 0.15))),
+    }))
+
+const makeShiftRecord = (cfg: ReviewerShiftCfg, i: number): ShiftRecord => {
+  const today = i === 0
+  const rate = today ? cfg.perHour : Math.max(+(cfg.perHour + (((i + cfg.seed) % 5) - 2) * 0.4).toFixed(1), 1)
+  const approvedPct = today ? cfg.approvedPct : Math.min(cfg.approvedPct + (((i + cfg.seed) % 3) - 1), 99)
+  const clockInMin = toMin(cfg.clockIn) + (today ? 0 : ((i * 7 + cfg.seed) % 13) - 6)
+  const clockOutMin = today
+    ? cfg.clockOut ? toMin(cfg.clockOut) : null
+    : toMin(cfg.clockOut ?? '17:06') + ((i * 11 + cfg.seed) % 17) - 8
+  const pauses = today ? cfg.pauses : jitterPauses(cfg.pauses, i, cfg.seed)
+  const pausedMin = pauses.reduce((s, p) => s + p.mins, 0)
+  const endMin = clockOutMin ?? QC_NOW_MIN
+  const activeMin = Math.max(endMin - clockInMin - pausedMin, 60)
+  const avgSec = today ? cfg.avgDecisionSec : Math.round(3600 / rate)
+  const flagEvery = Math.max(3, cfg.flagEvery + ((i + cfg.seed) % 3) - 1)
+  const flagUsage = today
+    ? cfg.flagUsage
+    : cfg.flagUsage
+        .map((f, fi) => ({ label: f.label, count: Math.max(f.count + ((i + fi + cfg.seed) % 3) - 1, 0) }))
+        .filter(f => f.count > 0)
+  return {
+    date: shiftDates[i],
+    today,
+    clockIn: fmtClock(clockInMin),
+    clockOut: clockOutMin === null ? null : fmtClock(clockOutMin),
+    reviewed: Math.round(rate * (activeMin / 60)),
+    perHour: rate,
+    approvedPct,
+    active: fmtClock(activeMin),
+    pausedMin,
+    pauses,
+    skips: today ? cfg.skips : Math.max(cfg.skips + ((i + cfg.seed) % 4) - 1, 0),
+    undos: today ? cfg.undos : Math.max(cfg.undos + ((i + cfg.seed) % 3) - 1, 0),
+    avgDecisionSec: avgSec,
+    fastestSec: Math.round(cfg.fastestSec * (today ? 1 : 0.9 + ((i + cfg.seed) % 3) * 0.1)),
+    slowestSec: Math.round(cfg.slowestSec * (today ? 1 : 0.85 + ((i + cfg.seed) % 4) * 0.1)),
+    flagUsage,
+    decisions: makeDecisions(endMin - 8 - ((i + cfg.seed) % 9), cfg.gapMin, avgSec, cfg.seed + i, flagEvery),
+  }
+}
+
+const makeReviewerShifts = (cfg: ReviewerShiftCfg): ReviewerDetail => ({
+  shifts: shiftDates.map((_, i) => makeShiftRecord(cfg, i)),
+})
+
+export const qcReviewerDetails: Record<string, ReviewerDetail> = {
+  'rosa-delgado': makeReviewerShifts({
+    seed: 0, perHour: 14.2, approvedPct: 84, clockIn: '8:54', clockOut: null,
+    pauses: [{ at: '10:32', mins: 11 }, { at: '12:58', mins: 34 }],
+    skips: 2, undos: 1, avgDecisionSec: 245, fastestSec: 74, slowestSec: 690, gapMin: 4, flagEvery: 6,
+    flagUsage: [
+      { label: 'Artwork text does not match metadata', count: 7 },
+      { label: 'Audio quality below minimum standard', count: 6 },
+      { label: 'Explicit content not labelled', count: 4 },
+    ],
+  }),
+  'priya-nair': makeReviewerShifts({
+    seed: 1, perHour: 13.1, approvedPct: 88, clockIn: '8:59', clockOut: null,
+    pauses: [{ at: '11:05', mins: 9 }, { at: '13:02', mins: 38 }, { at: '15:11', mins: 8 }],
+    skips: 1, undos: 2, avgDecisionSec: 268, fastestSec: 82, slowestSec: 745, gapMin: 5, flagEvery: 8,
+    flagUsage: [
+      { label: 'Title formatting breaks store rules', count: 5 },
+      { label: 'Artwork quality / resolution below spec', count: 4 },
+      { label: 'Possible third-party content — license required', count: 3 },
+    ],
+  }),
+  'milo-fenwick': makeReviewerShifts({
+    seed: 2, perHour: 12.7, approvedPct: 81, clockIn: '9:02', clockOut: null,
+    pauses: [{ at: '12:47', mins: 31 }],
+    skips: 4, undos: 0, avgDecisionSec: 276, fastestSec: 68, slowestSec: 810, gapMin: 5, flagEvery: 5,
+    flagUsage: [
+      { label: 'Audio quality below minimum standard', count: 8 },
+      { label: 'Artwork text does not match metadata', count: 6 },
+      { label: 'Copyright documents missing / uncorroborated', count: 4 },
+    ],
+  }),
+  'tessa-marchetti': makeReviewerShifts({
+    seed: 3, perHour: 11.8, approvedPct: 90, clockIn: '8:56', clockOut: null,
+    pauses: [{ at: '10:15', mins: 12 }, { at: '12:30', mins: 42 }, { at: '14:50', mins: 9 }],
+    skips: 3, undos: 3, avgDecisionSec: 297, fastestSec: 90, slowestSec: 880, gapMin: 5, flagEvery: 9,
+    flagUsage: [
+      { label: 'Artist name mismatch across fields', count: 4 },
+      { label: 'Explicit content not labelled', count: 3 },
+      { label: 'Artwork text does not match metadata', count: 2 },
+    ],
+  }),
+  'james-keane': makeReviewerShifts({
+    seed: 4, perHour: 11.2, approvedPct: 85, clockIn: '8:58', clockOut: null,
+    pauses: [{ at: '10:40', mins: 8 }, { at: '13:05', mins: 35 }],
+    skips: 1, undos: 1, avgDecisionSec: 313, fastestSec: 95, slowestSec: 920, gapMin: 6, flagEvery: 7,
+    flagUsage: [
+      { label: 'Artwork text does not match metadata', count: 5 },
+      { label: 'Possible third-party content — license required', count: 4 },
+      { label: 'Title formatting breaks store rules', count: 4 },
+    ],
+  }),
+  'callum-boyd': makeReviewerShifts({
+    seed: 5, perHour: 10.4, approvedPct: 92, clockIn: '9:12', clockOut: '15:24',
+    pauses: [{ at: '10:58', mins: 17 }, { at: '12:44', mins: 39 }, { at: '14:21', mins: 12 }],
+    skips: 5, undos: 2, avgDecisionSec: 337, fastestSec: 104, slowestSec: 1010, gapMin: 6, flagEvery: 11,
+    flagUsage: [
+      { label: 'Artwork quality / resolution below spec', count: 3 },
+      { label: 'Audio quality below minimum standard', count: 2 },
+      { label: 'Explicit content not labelled', count: 1 },
+    ],
+  }),
+  'aisha-bello': makeReviewerShifts({
+    seed: 6, perHour: 9.1, approvedPct: 79, clockIn: '9:06', clockOut: null,
+    pauses: [{ at: '9:58', mins: 14 }, { at: '11:20', mins: 22 }, { at: '13:10', mins: 41 }, { at: '15:02', mins: 18 }],
+    skips: 6, undos: 4, avgDecisionSec: 385, fastestSec: 118, slowestSec: 1240, gapMin: 7, flagEvery: 4,
+    flagUsage: [
+      { label: 'Audio quality below minimum standard', count: 6 },
+      { label: 'Artwork text does not match metadata', count: 5 },
+      { label: 'Suspected fraud — escalate to fraud team', count: 3 },
+    ],
+  }),
+  'jonas-weber': makeReviewerShifts({
+    seed: 7, perHour: 7.8, approvedPct: 94, clockIn: '9:21', clockOut: '15:47',
+    pauses: [{ at: '10:05', mins: 19 }, { at: '11:32', mins: 28 }, { at: '13:20', mins: 44 }, { at: '14:55', mins: 21 }],
+    skips: 8, undos: 5, avgDecisionSec: 452, fastestSec: 133, slowestSec: 1495, gapMin: 8, flagEvery: 13,
+    flagUsage: [
+      { label: 'Title formatting breaks store rules', count: 2 },
+      { label: 'Artwork quality / resolution below spec', count: 1 },
+    ],
+  }),
 }
 
 // ── Licensing ────────────────────────────────────────────────────────────────
