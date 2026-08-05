@@ -6,7 +6,7 @@
         <h1 class="text-h1 font-satoshi text-ink">QC Review</h1>
         <p class="text-[13px] text-subtext mt-0.5">
           Ingestion queue ·
-          <span v-if="!done" class="tabular-nums">release {{ position }} of {{ queue.length }} · {{ remaining }} remaining</span>
+          <span v-if="!done" class="tabular-nums">release {{ position }} of {{ total }} · {{ remaining }} remaining<template v-if="skippedCount"> · {{ skippedCount }} skipped, still in queue</template></span>
           <span v-else>queue clear</span>
         </p>
       </div>
@@ -77,7 +77,10 @@
           </div>
 
           <div class="bg-white border border-hairline rounded-card shadow-card p-4">
-            <h2 class="text-h3 text-ink mb-2.5">Release</h2>
+            <div class="flex items-center justify-between mb-2.5">
+              <h2 class="text-h3 text-ink">Release</h2>
+              <StatusBadge v-if="skippedIds.has(current.id)" variant="warning" label="Skipped earlier" />
+            </div>
             <dl class="space-y-1.5 text-[13px]">
               <div v-for="f in releaseFacts" :key="f.label" class="flex items-baseline justify-between gap-3">
                 <dt class="text-subtext flex-shrink-0">{{ f.label }}</dt>
@@ -219,6 +222,7 @@
             <div class="flex items-center gap-2">
               <button
                 @click="decide('skip')"
+                title="Moves this release to the back of the queue — it still needs a decision"
                 class="flex-1 h-8 rounded-control text-[13px] font-medium text-subtext hover:text-ink hover:bg-lavender-soft transition-colors flex items-center justify-center gap-1.5"
               >
                 Skip <kbd class="text-[10px] border border-hairline-strong rounded px-1 py-px">S</kbd>
@@ -259,7 +263,7 @@ import Icon from '../../components/ui/Icon.vue'
 import StatusBadge from '../../components/ui/StatusBadge.vue'
 import TextAreaField from '../../components/ui/TextAreaField.vue'
 import PlayerBar, { type PlayerTrack } from '../../components/ui/PlayerBar.vue'
-import { qcReviewQueue, flagReasons, qcShift, type CheckStatus } from '../../data/mockQc'
+import { qcReviewQueue, flagReasons, qcShift, type CheckStatus, type QcReviewItem } from '../../data/mockQc'
 
 type Action = 'pass' | 'flag' | 'skip'
 
@@ -269,17 +273,21 @@ interface Decision {
   reasons: number[]
 }
 
-const queue = qcReviewQueue
-const idx = ref(0)
+// Skipping never removes a release from the queue — it only moves it to the
+// back of this reviewer's session. Every release still needs a pass/flag.
+const total = qcReviewQueue.length
+const pending = ref<QcReviewItem[]>([...qcReviewQueue])
 const decisions = ref<Decision[]>([])
+const skippedIds = ref(new Set<number>())
 const selectedReasons = ref(new Set<number>())
 const note = ref('')
 
-const done = computed(() => idx.value >= queue.length)
-const current = computed(() => queue[Math.min(idx.value, queue.length - 1)])
-const position = computed(() => Math.min(idx.value + 1, queue.length))
-const remaining = computed(() => queue.length - idx.value - 1)
-const progress = computed(() => idx.value / queue.length)
+const done = computed(() => pending.value.length === 0)
+const current = computed(() => pending.value[0] ?? qcReviewQueue[0])
+const position = computed(() => Math.min(decisions.value.length + 1, total))
+const remaining = computed(() => Math.max(pending.value.length - 1, 0))
+const progress = computed(() => decisions.value.length / total)
+const skippedCount = computed(() => pending.value.filter(r => skippedIds.value.has(r.id)).length)
 
 // ── Session analytics ────────────────────────────────────────────────────────
 // Shift baseline (since 09:00) + everything decided in this live session.
@@ -367,20 +375,31 @@ const resetItemState = () => {
 const decide = (action: Action) => {
   if (done.value) return
   if (action === 'flag' && !selectedReasons.value.size) return
+  if (action === 'skip') {
+    // Personal pass-over: rotate to the back of the queue, still undecided.
+    if (pending.value.length > 1) {
+      const item = pending.value.shift()!
+      skippedIds.value = new Set(skippedIds.value).add(item.id)
+      pending.value.push(item)
+      resetItemState()
+    }
+    return
+  }
+  const item = pending.value.shift()!
   decisions.value.push({
-    id: current.value.id,
+    id: item.id,
     action,
     reasons: action === 'flag' ? [...selectedReasons.value] : [],
   })
   resetItemState()
-  idx.value++
 }
 
 const undo = () => {
   const last = decisions.value.pop()
   if (!last) return
+  const item = qcReviewQueue.find(r => r.id === last.id)
+  if (item) pending.value.unshift(item)
   resetItemState()
-  idx.value = Math.max(idx.value - 1, 0)
 }
 
 const toggleReason = (id: number) => {
