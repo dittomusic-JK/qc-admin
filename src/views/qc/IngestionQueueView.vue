@@ -1,6 +1,8 @@
 <template>
   <div>
-    <PageHeader title="Ingestion Queue" description="Releases awaiting quality control before ingestion to stores." />
+    <PageHeader title="Ingestion Queue" description="Releases awaiting quality control before ingestion to stores.">
+      <Btn variant="primary" icon="clipboard-check" @click="$router.push('/qc/review')">Start QC session</Btn>
+    </PageHeader>
 
     <div class="space-y-4">
       <DataTable

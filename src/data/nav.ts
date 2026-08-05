@@ -46,6 +46,7 @@ export const nav: NavEntry[] = [
     label: 'Idol / QC',
     icon: 'clipboard-check',
     items: [
+      { label: 'QC Review', path: '/qc/review' },
       { label: 'Lyrics QC', path: '/qc/lyrics' },
       { label: 'Ditto+ Lyrics QC', path: '/qc/lyrics-ditto-plus' },
       { label: 'Ingestion Queue', path: '/qc/ingestion-queue' },
