@@ -52,6 +52,20 @@
             {{ format(elapsed) }} <span class="text-prompt">/ {{ format(duration) }}</span>
           </p>
 
+          <!-- Playback speed -->
+          <button
+            @click="cycleRate"
+            :aria-label="`Playback speed ${rate}×, click to change`"
+            :class="[
+              'flex-shrink-0 h-7 w-11 rounded-control text-xs font-semibold tabular-nums transition-colors',
+              rate === 1
+                ? 'text-subtext hover:text-ink hover:bg-lavender-soft'
+                : 'bg-accent-soft text-accent hover:bg-accent-soft/70'
+            ]"
+          >
+            {{ rate }}×
+          </button>
+
           <!-- Volume + close -->
           <div class="hidden md:flex items-center gap-2 flex-shrink-0 w-40">
             <Icon name="volume" :size="15" class="text-subtext flex-shrink-0" />
@@ -97,6 +111,13 @@ const playing = ref(false)
 const elapsed = ref(0)
 const seekRef = ref<HTMLElement | null>(null)
 
+// Speed persists across tracks — a reviewer working at 2× wants it to stay.
+const rates = [1, 1.5, 2] as const
+const rate = ref<number>(1)
+const cycleRate = () => {
+  rate.value = rates[(rates.indexOf(rate.value as typeof rates[number]) + 1) % rates.length]
+}
+
 const duration = computed(() => props.track?.duration ?? 204)
 const fraction = computed(() => (duration.value ? Math.min(elapsed.value / duration.value, 1) : 0))
 
@@ -107,7 +128,7 @@ const tick = () => {
     playing.value = false
     elapsed.value = duration.value
   } else {
-    elapsed.value += 0.5
+    elapsed.value = Math.min(elapsed.value + 0.5 * rate.value, duration.value)
   }
 }
 
