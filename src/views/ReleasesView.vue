@@ -1,6 +1,6 @@
 <template>
   <div>
-    <PageHeader title="Music Releases" description="Search, review and manage every release in the catalogue." />
+    <PageHeader title="Find a release" description="Look up any release by title, artist, barcode or ISRC to QC it or check its history." />
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_300px] gap-4 items-start">
       <!-- Results -->

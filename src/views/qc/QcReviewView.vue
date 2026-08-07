@@ -169,9 +169,10 @@
             </div>
             <p class="text-xs text-subtext mt-2">Member since {{ current.memberSince }}</p>
             <div class="flex items-center gap-2 mt-3">
-              <Btn size="sm" icon="user" @click="$router.push(`/users/${current.userId}`)">View user</Btn>
-              <Btn size="sm" icon="external" @click="$router.push(`/releases/${current.id}`)">Full release</Btn>
+              <Btn size="sm" icon="external" :href="legacyAdmin.user(current.userId)">View account</Btn>
+              <Btn size="sm" icon="eye" @click="$router.push(`/releases/${current.id}`)">Full release</Btn>
             </div>
+            <p class="text-xs text-prompt mt-1.5">Account screens open in the legacy admin.</p>
           </div>
         </div>
 
@@ -332,6 +333,7 @@ import Icon from '../../components/ui/Icon.vue'
 import StatusBadge from '../../components/ui/StatusBadge.vue'
 import TextAreaField from '../../components/ui/TextAreaField.vue'
 import PlayerBar, { type PlayerTrack } from '../../components/ui/PlayerBar.vue'
+import { legacyAdmin } from '../../data/legacy'
 import {
   qcReviewQueue,
   flagReasons,

@@ -1,5 +1,9 @@
 <template>
-  <button
+  <component
+    :is="href ? 'a' : 'button'"
+    :href="href"
+    :target="href ? '_blank' : undefined"
+    :rel="href ? 'noopener' : undefined"
     :class="[
       'inline-flex items-center justify-center gap-1.5 font-medium rounded-control transition-colors whitespace-nowrap',
       'focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:ring-offset-1',
@@ -7,11 +11,11 @@
       variantClass,
       block ? 'w-full' : '',
     ]"
-    :type="type ?? 'button'"
+    :type="href ? undefined : (type ?? 'button')"
   >
     <Icon v-if="icon" :name="icon" :size="size === 'sm' ? 13 : 15" />
     <slot />
-  </button>
+  </component>
 </template>
 
 <script setup lang="ts">
@@ -24,6 +28,8 @@ const props = withDefaults(defineProps<{
   icon?: string
   block?: boolean
   type?: 'button' | 'submit'
+  /** Renders as an anchor opening in a new tab — used for legacy-admin links. */
+  href?: string
 }>(), {
   variant: 'secondary',
   size: 'md',

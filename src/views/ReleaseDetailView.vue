@@ -20,7 +20,7 @@
         <Btn icon="clipboard-check">Check Idol validation</Btn>
         <Btn icon="upload">Save &amp; update Idol</Btn>
         <Btn icon="copy">Duplicate release</Btn>
-        <Btn variant="danger" icon="flag">Flag account</Btn>
+        <Btn variant="danger" icon="flag" :href="legacyAdmin.fraudFlag(1545390)">Flag account</Btn>
       </div>
     </div>
 
@@ -129,7 +129,7 @@
               <DetailList title="Owner">
                 <DetailRow label="User">
                   <a href="mailto:khiba.mood@example.com" class="text-info-ink hover:underline">khiba.mood@example.com</a>
-                  <Btn size="sm" icon="user" @click="$router.push('/users/1545390')">View user</Btn>
+                  <Btn size="sm" icon="external" :href="legacyAdmin.user(1545390)">View account</Btn>
                 </DetailRow>
                 <DetailRow label="Important release">
                   <StatusBadge variant="neutral" label="No" />
@@ -137,7 +137,7 @@
                 </DetailRow>
                 <DetailRow label="Suspected fraud">
                   <StatusBadge variant="neutral" label="Not flagged" />
-                  <Btn size="sm" variant="danger" icon="flag">Flag account</Btn>
+                  <Btn size="sm" variant="danger" icon="flag" :href="legacyAdmin.fraudFlag(1545390)">Flag account</Btn>
                 </DetailRow>
               </DetailList>
             </div>
@@ -501,6 +501,7 @@ import TextAreaField from '../components/ui/TextAreaField.vue'
 import EmptyState from '../components/ui/EmptyState.vue'
 import DataTable, { type Column } from '../components/ui/DataTable.vue'
 import PlayerBar, { type PlayerTrack } from '../components/ui/PlayerBar.vue'
+import { legacyAdmin } from '../data/legacy'
 import {
   releaseDetail as release,
   releaseTracks,

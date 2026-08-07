@@ -54,13 +54,16 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { nav } from '../../data/nav'
+import { legacyAdmin } from '../../data/legacy'
 import Icon from '../ui/Icon.vue'
 
 const route = useRoute()
 const menuOpen = ref(false)
 
+// This app is content QC only — everything else (accounts, orders, payouts,
+// products, video) stays in the legacy admin, linked here.
 const links = [
-  { label: 'Homepage', href: 'https://dittomusic.com' },
+  { label: 'Legacy Admin', href: legacyAdmin.root },
   { label: 'Customer Dashboard', href: '/dashboard' },
   { label: 'Dashboard2', href: 'https://dashboard2.dittomusic.com/admin/app/user/list' },
 ]
